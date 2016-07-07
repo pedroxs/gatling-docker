@@ -1,0 +1,45 @@
+version: "2"
+
+services:
+  sample-service:
+    image: mhart/alpine-node:6.2
+    command: node hello-http.js
+    volumes:
+      - ./sample-service/hello-http.js:/hello-http.js:ro
+    ports:
+      - "8000:8000"
+
+  gatling-runner:
+    image: denvazh/gatling:2.2.0
+    command: [-s, sample.SampleService]
+    volumes:
+      - ./gatling/conf:/opt/gatling/conf
+      - ./gatling/simulations:/opt/gatling/user-files/simulations
+      - ./gatling/results:/opt/gatling/results
+    links:
+      - influxdb
+      - grafana
+      - sample-service
+
+  influxdb:
+    image: influxdb:0.12
+    volumes:
+      - ./influxdb/data:/var/lib/influxdb
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+      - "2003:2003"
+
+  grafana:
+    image: grafana/grafana:3.0.1
+    environment:
+      - INFLUXDB_NAME=gatling
+      - INFLUXDB_HOST=influxdb
+    volumes:
+      - ./grafana/run.sh:/run.sh:ro
+      - ./grafana/data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    links:
+      - influxdb
