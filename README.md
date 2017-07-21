@@ -1,10 +1,9 @@
 # gatling-docker
-Run Gatling over Docker with InfluxDB and Grafana
-[https://jhipster.github.io](https://jhipster.github.io)
+Run [Gatling](http://gatling.io/) over [Docker](https://www.docker.com/) with [InfluxDB](https://www.influxdata.com/) and [Grafana](https://grafana.com/)
 
 ### pre-reqs
 To run this demo you need:
-- [docker](https://www.docker.com/)
+- docker
 - docker-machine
 - docker-compose
 
