@@ -1,45 +1,46 @@
-version: "2"
-
+version: "2.2"
 services:
   sample-service:
     image: node:6.9.5-alpine
-    command: node hello-http.js
+    command: node test.js
+    networks:
+      - gatling_network
     volumes:
-      - ./sample-service/hello-http.js:/hello-http.js:ro
+      - ./sample-service/test.js:/test.js:ro
     ports:
       - "8000:8000"
-
   gatling-runner:
-    image: denvazh/gatling:2.2.3
+    image: gatling:2.3.0
+    scale: 2 # Scale to see the result of multiple nodes
+    build:
+      context: gatling/2.3.0
     command: [-s, sample.SampleService]
-    volumes:
-      - ./gatling/conf:/opt/gatling/conf
-      - ./gatling/simulations:/opt/gatling/user-files/simulations
-      - ./gatling/results:/opt/gatling/results
-    links:
-      - influxdb
+    networks:
+      - gatling_network
+    depends_on:
       - grafana
-      - sample-service
-
-  influxdb:
-    image: influxdb:1.2.0-alpine
+    environment:
+      - LOCAL_USER_ID=`id -u $USER`
     volumes:
-      - ./influxdb/data:/var/lib/influxdb
-      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
+      - ./gatling/2.3.0/simulations:/opt/app/java/gatling/user-files/simulations
+      - ./gatling/2.3.0/results:/opt/app/java/gatling/results
+  influxdb:
+    image: influxdb:2.3.0
+    build:
+      context: influxdb/1.2.0-alpine
+    networks:
+      - gatling_network
     ports:
       - "8083:8083"
       - "8086:8086"
       - "2003:2003"
-
   grafana:
-    image: grafana/grafana:4.1.1
-    environment:
-      - INFLUXDB_NAME=gatling
-      - INFLUXDB_HOST=influxdb
-    volumes:
-      - ./grafana/run.sh:/run.sh:ro
-      - ./grafana/data:/var/lib/grafana
+    image: grafana
+    build:
+      context: grafana
+    networks:
+      - gatling_network
     ports:
       - "3000:3000"
-    links:
-      - influxdb
+networks:
+  gatling_network:
